@@ -8,6 +8,7 @@
  */
 
 require __DIR__ . '/../vendor/autoload.php';
+
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
 
@@ -50,7 +51,7 @@ switch ($routeInfo[0]) {
          *  For instance for: `$r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);`
          *  $routeInfo[1] will be `['App\Controllers\HelloController', 'greet']`
          * 
-         * Hint: we can use class namespace strings like `App\Controllers\HelloController` to create new instances of that class.
+         * Hint: we can use class strings like `App\Controllers\HelloController` to create new instances of that class.
          * Hint: in PHP we can use a string to call a class method dynamically, like this: `$instance->$methodName($args);`
          */
 

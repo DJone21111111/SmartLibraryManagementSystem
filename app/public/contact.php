@@ -1,6 +1,8 @@
 <?php
 
 /**
+ * This page is visible at http://localhost/contact.php
+ * 
  * PHP has several global variables that are available in all scopes.
  * 
  * 
@@ -8,9 +10,14 @@
  * 
  * Which $_SERVER variable can we use to determine the request method?
  * 
- * TODO: Update the conditional to display a contact form only if the request method is GET.
+ * TODO: 
+ *  In the if statement, use the appropriate $_SERVER variable to check if the request method is POST.
+ *  If it is, process the form submission.
+ *  If it is not, display the contact form.
+ *  Identify where the post data is set and displayed.
+ *  Use `var_dump()` and `die()` to inspect contents of $_POST.
+ *  Note: Use of `htmlspecialchars`. Research why this is used here when displaying user supplied data in the browser.
  */
-
 
 if (FALSE) {
     // Collect and sanitize input
