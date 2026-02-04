@@ -2,12 +2,14 @@
 
 namespace App\Controllers;
 
-class HomeController
+use App\Framework\Controller;
+
+class HomeController extends Controller
 {
-    public function home($vars = [])
+    public function index(): void
     {
-        // normally we don't want to echo from a controller method directly
-        // but rather load a view template
-        echo "Welcome home!";
+        $this->render('Home/index', [
+            'title' => 'Home'
+        ]);
     }
 }

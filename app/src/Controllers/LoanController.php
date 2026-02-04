@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Framework\Auth;
+use App\Framework\Controller;
+use App\Services\LoanService;
+
+class LoanController extends Controller
+{
+    public function borrow(): void
+    {
+        Auth::requireLogin();
+
+        $user = Auth::user();
+        $bookId = (int)($_POST['book_id'] ?? 0);
+
+        if ($bookId <= 0) {
+            $this->flash('Invalid book.', 'danger');
+            $this->redirect('catalog');
+            return;
+        }
+
+        $service = new LoanService();
+        $ok = $service->borrow((int)$user['id'], $bookId);
+
+        if (!$ok) {
+            $this->flash('No copies available to borrow.', 'warning');
+            $this->redirect('book/detail&id=' . $bookId);
+            return;
+        }
+
+        $this->flash('Book borrowed successfully!', 'success');
+        $this->redirect('dashboard');
+    }
+
+    public function return(): void
+    {
+        Auth::requireLogin();
+
+        $user = Auth::user();
+        $loanId = (int)($_POST['loan_id'] ?? 0);
+
+        if ($loanId <= 0) {
+            $this->flash('Invalid loan.', 'danger');
+            $this->redirect('dashboard');
+            return;
+        }
+
+        $service = new LoanService();
+        $ok = $service->returnBook($loanId, (int)$user['id']);
+
+        if (!$ok) {
+            $this->flash('Unable to return loan.', 'danger');
+            $this->redirect('dashboard');
+            return;
+        }
+
+        $this->flash('Book returned.', 'success');
+        $this->redirect('dashboard');
+    }
+}
