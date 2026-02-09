@@ -25,4 +25,10 @@ class UserRepository extends BaseRepository implements IUserRepository
             [$email]
         );
     }
+
+    public function countMembers(): int
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) as cnt FROM users WHERE role = 'member'");
+        return (int)($row['cnt'] ?? 0);
+    }
 }

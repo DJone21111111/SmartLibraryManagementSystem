@@ -17,7 +17,14 @@ class Controller
 
     protected function redirect(string $path): void
     {
-        header("Location: " . $path);
+        // Normalize redirects: accept absolute paths or route-like strings
+        if (str_starts_with($path, 'http') || str_starts_with($path, '/')) {
+            $target = $path;
+        } else {
+            $target = '/' . ltrim($path, '/');
+        }
+
+        header("Location: " . $target);
         exit;
     }
 

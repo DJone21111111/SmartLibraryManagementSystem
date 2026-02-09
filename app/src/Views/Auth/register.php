@@ -1,16 +1,22 @@
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-7 col-lg-5">
-      <div class="card card-soft p-4">
-        <h3 class="fw-bold mb-3 text-center">Register</h3>
+<div class="auth-page">
+  <div class="auth-grid">
+    <div class="auth-hero" style="background-image: url('/assets/Uploads/otherImages/loginImage.jpg')" aria-hidden="true"></div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <h2 class="auth-title">Create account</h2>
+        <p class="auth-sub">Register a new account to access the library.</p>
 
-        <?php if (!empty($error)): ?>
-          <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php if (!empty($flash)): ?>
+          <div class="alert alert-<?= htmlspecialchars($flash['type'] ?? 'info') ?>"><?= htmlspecialchars($flash['message'] ?? '') ?></div>
         <?php endif; ?>
 
-        <form method="post" action="/index.php?route=register">
+        <form method="post" action="/register">
           <div class="mb-3">
-            <label class="form-label">Email</label>
+            <label class="form-label">Full name</label>
+            <input class="form-control" name="name" type="text" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
             <input class="form-control" name="email" type="email" required>
           </div>
 
@@ -19,11 +25,15 @@
             <input class="form-control" name="password" type="password" required>
           </div>
 
-          <button class="btn btn-primary w-100">Create Account</button>
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input class="form-control" name="password2" type="password" required>
+          </div>
 
-          <p class="text-muted small mt-3 mb-0 text-center">
-            Already have an account? <a href="/index.php?route=login">Login</a>
-          </p>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-primary">Register</button>
+            <a href="/login" class="small">Already have an account?</a>
+          </div>
         </form>
       </div>
     </div>

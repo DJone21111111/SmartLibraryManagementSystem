@@ -12,7 +12,8 @@ class AuthController extends Controller
     {
         $this->render('Auth/login', [
             'title' => 'Login',
-            'error' => null
+            'error' => null,
+            'hideSidebar' => true
         ]);
     }
 
@@ -24,7 +25,8 @@ class AuthController extends Controller
         if ($email === '' || $password === '') {
             $this->render('Auth/login', [
                 'title' => 'Login',
-                'error' => 'Email and password are required.'
+                'error' => 'Email and password are required.',
+                'hideSidebar' => true
             ]);
             return;
         }
@@ -35,7 +37,8 @@ class AuthController extends Controller
         if (!$user) {
             $this->render('Auth/login', [
                 'title' => 'Login',
-                'error' => 'Invalid login or account blocked.'
+                'error' => 'Invalid login or account blocked.',
+                'hideSidebar' => true
             ]);
             return;
         }

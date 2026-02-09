@@ -7,4 +7,6 @@ interface IUserRepository
     public function findById(int $id): ?array;
 
     public function findByEmail(string $email): ?array;
+
+    public function countMembers(): int;
 }

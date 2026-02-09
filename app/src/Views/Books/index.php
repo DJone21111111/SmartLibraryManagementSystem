@@ -1,37 +1,162 @@
 <div class="container py-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h2 class="mb-0">Catalog</h2>
+  <div class="catalog-container">
+    <div class="catalog-main">
+      <div class="page-header">
+        <div class="page-title">Book Catalog</div>
+        <div class="page-subtitle">Browse and search our entire collection of books.</div>
+      </div>
 
-    <form class="d-flex gap-2" method="get" action="/index.php">
-      <input type="hidden" name="route" value="catalog">
-      <input class="form-control" name="q" value="<?= htmlspecialchars($q ?? '') ?>" placeholder="Search title or author">
-      <button class="btn btn-outline-primary">Search</button>
-    </form>
-  </div>
+      <form class="catalog-search" method="get" action="/catalog" role="search" aria-label="Catalog search">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+          <input type="search" name="q" value="<?= htmlspecialchars($q ?? '') ?>" class="form-control" placeholder="Search by Title..." aria-label="Search books by title">
+          <button class="btn btn-accent" type="submit">Search</button>
+        </div>
+      </form>
 
-  <div class="row g-3">
-    <?php foreach (($books ?? []) as $b): ?>
-      <div class="col-md-6 col-lg-4">
-        <div class="card card-soft h-100">
-          <div class="p-3 d-flex gap-3">
-            <img class="cover" src="<?= htmlspecialchars($b['cover_url'] ?? '/images/default-cover.png') ?>" alt="">
-            <div class="flex-grow-1">
-              <div class="fw-semibold"><?= htmlspecialchars($b['Title'] ?? '') ?></div>
-              <div class="text-muted small"><?= htmlspecialchars($b['author'] ?? '') ?></div>
-              <div class="text-muted small"><?= htmlspecialchars($b['Genre'] ?? '') ?> • <?= htmlspecialchars((string)($b['published_year'] ?? '')) ?></div>
-              <div class="mt-2">
-                <a class="btn btn-sm btn-primary" href="/index.php?route=book/detail&id=<?= (int)$b['id'] ?>">View</a>
-              </div>
-            </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="filters d-flex gap-2 align-items-center">
+          <button type="button" class="btn btn-filter active">All</button>
+          <button type="button" class="btn btn-filter">Available</button>
+          <button type="button" class="btn btn-filter">Overdue</button>
+          <button type="button" class="btn btn-filter">Reserved</button>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+          <div class="d-flex gap-2">
+            <select name="sort" class="form-select form-select-sm">
+              <option value="title">Title</option>
+              <option value="author">Author</option>
+              <option value="published">Published</option>
+            </select>
+            <select name="direction" class="form-select form-select-sm">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+          <div class="btn-group" role="group" aria-label="View toggle">
+            <button type="button" class="btn btn-light btn-sm" title="List view" data-view="list"><i class="bi bi-list"></i></button>
+            <button type="button" class="btn btn-light btn-sm" title="Grid view" data-view="grid"><i class="bi bi-grid-3x3-gap"></i></button>
           </div>
         </div>
       </div>
-    <?php endforeach; ?>
 
-    <?php if (empty($books)): ?>
-      <div class="col-12">
-        <div class="card card-soft p-4 text-muted">No books found.</div>
-      </div>
-    <?php endif; ?>
+      <?php if (empty($books)): ?>
+        <div class="alert alert-info">No books found.</div>
+      <?php else: ?>
+        <?php
+          // Pagination: 4 items per page
+          $page = max(1, (int)($_GET['p'] ?? 1));
+          $perPage = 4;
+          $total = count($books);
+          $totalPages = (int)max(1, ceil($total / $perPage));
+          if ($page > $totalPages) $page = $totalPages;
+          $start = ($page - 1) * $perPage;
+          $pageItems = array_slice($books, $start, $perPage);
+        ?>
+
+        <div class="d-flex flex-column gap-3">
+          <?php foreach ($pageItems as $b):
+            // normalize DB columns (admin exports show lowercase column names)
+            $file = $b['cover_url'] ?? $b['cover'] ?? $b['coverPath'] ?? '';
+            if (trim($file) === '') {
+              $coverPath = '/assets/Uploads/covers/default-cover.svg';
+            } else {
+              if (preg_match('#(^/|assets/Uploads/)#i', $file)) {
+                $coverPath = '/' . ltrim($file, '/');
+              } else {
+                $coverPath = '/assets/Uploads/covers/' . rawurlencode($file);
+              }
+            }
+
+            $title = $b['title'] ?? $b['Title'] ?? '';
+            $author = $b['author'] ?? $b['Author'] ?? '';
+            $genre = $b['genre'] ?? $b['Genre'] ?? '';
+            $type = $b['type'] ?? $b['Type'] ?? '';
+            $isbn = $b['isbn'] ?? $b['ISBN'] ?? '';
+            $published = $b['published_year'] ?? $b['publishedYear'] ?? $b['published'] ?? '';
+            $available = $b['available'] ?? $b['available_count'] ?? $b['AvailableCopies'] ?? null;
+            $totalCopies = $b['total_copies'] ?? $b['totalCopies'] ?? $b['TotalCopies'] ?? null;
+          ?>
+
+          <div class="list-card">
+            <div class="list-thumb">
+              <img src="<?= $coverPath ?>" alt="<?= htmlspecialchars($b['Title'] ?? '') ?>" onerror="this.onerror=null;this.src='/assets/Uploads/covers/default-cover.svg'">
+            </div>
+            <div class="list-details">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="list-title"><?= htmlspecialchars($title) ?></div>
+                  <div class="text-muted small">Author: <?= htmlspecialchars($author) ?></div>
+                </div>
+                <div class="ms-3 text-end d-none d-md-block">
+                  <?php if ($available !== null && (int)$available > 0): ?>
+                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">Borrow</a>
+                  <?php elseif ($available !== null && (int)$available <= 0): ?>
+                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-outline-secondary">Reserve</a>
+                  <?php else: ?>
+                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">View</a>
+                  <?php endif; ?>
+                </div>
+              </div>
+
+              <div class="list-meta mt-2 small text-muted d-flex flex-wrap gap-2 align-items-center">
+                <?php if (!empty($genre)): ?>
+                  <div><i class="bi bi-bookmark me-1" aria-hidden="true"></i><?= htmlspecialchars($genre) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($type)): ?> <div>• <?= htmlspecialchars($type) ?></div><?php endif; ?>
+                <?php if (!empty($isbn)): ?> <div>• # <?= htmlspecialchars($isbn) ?></div><?php endif; ?>
+                <?php if (!empty($published)): ?> <div>• <?= htmlspecialchars($published) ?></div><?php endif; ?>
+                <?php if ($totalCopies !== null): ?> <div>• Copies: <?= (int)$totalCopies ?></div><?php endif; ?>
+              </div>
+
+              <div class="mt-2">
+                <?php if ($available !== null): ?>
+                  <?php if ((int)$available > 0): ?>
+                    <span class="badge badge-available">Available (<?= (int)$available ?>)</span>
+                    <?php if ((int)$available <= 2): ?> <span class="badge badge-low">Low Stock</span><?php endif; ?>
+                  <?php else: ?>
+                    <span class="badge badge-unavailable">Unavailable</span>
+                  <?php endif; ?>
+                <?php elseif ($totalCopies !== null): ?>
+                  <span class="badge badge-info">Total copies: <?= (int)$totalCopies ?></span>
+                  <?php if ((int)$totalCopies <= 2): ?> <span class="badge badge-low">Low Stock</span><?php endif; ?>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <div class="list-actions d-block d-md-none">
+              <?php if ($available !== null && (int)$available > 0): ?>
+                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">Borrow</a>
+              <?php elseif ($available !== null && (int)$available <= 0): ?>
+                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-outline-secondary">Reserve</a>
+              <?php else: ?>
+                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">View</a>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <?php endforeach; ?>
+        </div>
+
+        <!-- pagination -->
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination">
+            <li class="page-item<?= $page <= 1 ? ' disabled' : '' ?>">
+              <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['p' => $page - 1])) ?>">Previous</a>
+            </li>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+              <li class="page-item<?= $i === $page ? ' active' : '' ?>"><a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['p' => $i])) ?>"><?= $i ?></a></li>
+            <?php endfor; ?>
+            <li class="page-item<?= $page >= $totalPages ? ' disabled' : '' ?>">
+              <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['p' => $page + 1])) ?>">Next</a>
+            </li>
+          </ul>
+        </nav>
+      <?php endif; ?>
+    </div>
+
+    
   </div>
 </div>
+                                    

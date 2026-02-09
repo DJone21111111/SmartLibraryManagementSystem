@@ -11,8 +11,14 @@ class BookController extends Controller
     {
         $search = trim($_GET['q'] ?? '');
 
-        $service = new BookService();
-        $books = $service->getBooks($search);
+        try {
+            $service = new BookService();
+            $books = $service->getBooks($search);
+        } catch (\Throwable $ex) {
+            // Provide a friendly message instead of a blank page when DB is unavailable
+            $this->flash('Unable to load catalog. Please ensure the database is running. (' . $ex->getMessage() . ')', 'danger');
+            $books = [];
+        }
 
         $this->render('Books/index', [
             'title' => 'Catalog',

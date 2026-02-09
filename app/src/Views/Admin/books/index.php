@@ -23,7 +23,8 @@
             <tr>
               <td>
                 <div class="d-flex gap-2 align-items-center">
-                  <img class="cover" src="<?= htmlspecialchars($b['cover_url'] ?? '/images/default-cover.png') ?>" alt="">
+                  <?php $src = \App\Framework\Assets::coverSrc($b['cover_url'] ?? ''); ?>
+                  <img class="cover" src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars(($b['Title'] ?? 'Book') . ' cover') ?>">
                   <div>
                     <div class="fw-semibold"><?= htmlspecialchars($b['Title'] ?? '') ?></div>
                     <div class="text-muted small"><?= htmlspecialchars($b['author'] ?? '') ?></div>

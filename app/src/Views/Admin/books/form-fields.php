@@ -26,7 +26,8 @@
 
   <div class="col-12">
     <label class="form-label">Cover URL</label>
-    <input class="form-control" name="cover_url" value="<?= htmlspecialchars($book['cover_url'] ?? '/images/default-cover.png') ?>">
+    <input class="form-control" name="cover_url" placeholder="Filename or path (e.g. cover_01_xxx.webp or /assets/Uploads/covers/cover_01.webp)" value="<?= htmlspecialchars($book['cover_url'] ?? '') ?>">
+    <div class="form-text">If empty, a default cover will be used.</div>
   </div>
 
   <div class="col-12">

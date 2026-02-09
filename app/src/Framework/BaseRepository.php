@@ -10,7 +10,7 @@ class BaseRepository
 
     public function __construct()
     {
-        $this->pdo = Database::getConnection();
+        $this->pdo = Database::pdo();
     }
 
     protected function fetchAll(string $sql, array $params = []): array

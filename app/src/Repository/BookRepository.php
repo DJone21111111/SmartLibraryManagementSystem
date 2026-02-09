@@ -31,4 +31,16 @@ class BookRepository extends BaseRepository implements IBookRepository
             [$id]
         );
     }
+
+    public function countAll(): int
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) as cnt FROM books");
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    public function countGenres(): int
+    {
+        $row = $this->fetchOne("SELECT COUNT(DISTINCT Genre) as cnt FROM books");
+        return (int)($row['cnt'] ?? 0);
+    }
 }

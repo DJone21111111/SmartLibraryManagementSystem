@@ -34,7 +34,7 @@ class LoanController extends Controller
         $this->redirect('dashboard');
     }
 
-    public function return(): void
+    public function returnBook(): void
     {
         Auth::requireLogin();
 

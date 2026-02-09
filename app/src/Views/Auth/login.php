@@ -1,30 +1,46 @@
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-7 col-lg-5">
-      <div class="card card-soft p-4">
-        <h3 class="fw-bold mb-3 text-center">Login</h3>
+<div class="auth-page">
+  <div class="auth-grid">
+    <div class="auth-hero" style="background-image: url('/assets/Uploads/otherImages/loginImage.jpg')" aria-hidden="true"></div>
+
+    <div class="auth-panel">
+      <div class="auth-card">
+        <h2 class="auth-title">Login</h2>
+        <p class="auth-sub">Enter your credentials to access your account</p>
 
         <?php if (!empty($error)): ?>
           <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
-        <form method="post" action="/index.php?route=login">
+        <form method="post" action="/login">
           <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input class="form-control" name="email" type="email" required>
+            <label class="form-label">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input class="form-control" name="email" type="email" required>
+            </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Password</label>
-            <input class="form-control" name="password" type="password" required>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input class="form-control" name="password" type="password" required>
+            </div>
           </div>
 
-          <button class="btn btn-primary w-100">Login</button>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-primary w-100">Login</button>
+          </div>
+          <div class="text-center mb-2"><a href="/forgot-password" class="small">Forgot Password?</a></div>
 
-          <p class="text-muted small mt-3 mb-0 text-center">
-            Don’t have an account? <a href="/index.php?route=register">Register</a>
+          <p class="text-muted small mt-3 mb-0">
+            Don't have an account? <a href="/register">Register now</a>
           </p>
         </form>
+
+        <div class="demo-box">
+          <strong>Need help?</strong> For account or borrowing assistance, contact your library at <a href="mailto:help@yourlibrary.org">help@yourlibrary.org</a> or visit the <a href="https://www.rodi.nl/haarlem/cultuur/328441/bibliotheek-haarlem-alle-locaties-parkeren-en-boeken-lenen" target="_blank" rel="noopener">Help Center</a>.
+        </div>
       </div>
     </div>
   </div>
