@@ -41,4 +41,10 @@ class LoanRepository extends BaseRepository implements ILoanRepository
     return $this->lastInsertId();
 }
 
+    public function countActiveAll(): int
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) as cnt FROM loans WHERE returned_at IS NULL");
+        return (int)($row['cnt'] ?? 0);
+    }
+
 }

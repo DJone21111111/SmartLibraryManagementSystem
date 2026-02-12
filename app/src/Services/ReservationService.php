@@ -34,4 +34,9 @@ class ReservationService implements IReservationService
 
         return $newId > 0;
     }
+
+    public function cancel(int $reservationId, int $userId): bool
+    {
+        return $this->reservations->cancel($reservationId, $userId);
+    }
 }

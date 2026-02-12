@@ -2,6 +2,8 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+\App\Framework\TempData::start();
+
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
 use App\Controllers\AuthController;
@@ -11,6 +13,8 @@ use App\Controllers\LoanController;
 use App\Controllers\ReservationController;
 use App\Controllers\DashboardController;
 use App\Framework\Auth;
+use App\Services\LoanService;
+use App\Services\ReservationService;
 
 function render(string $viewPath, array $vars = []): void {
     \App\Framework\TempData::start();
@@ -42,9 +46,39 @@ function render(string $viewPath, array $vars = []): void {
 
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
-    // Home
-    $r->addRoute('GET', '/', function() { (new HomeController())->index(); });
+    // Home: send logged-in users to dashboard, guests to catalog
+    $r->addRoute('GET', '/', function() {
+        if (\App\Framework\Auth::check()) {
+            (new DashboardController())->index();
+            return;
+        }
+
+        (new BookController())->index();
+    });
     $r->addRoute('GET', '/index.php', function() { (new HomeController())->index(); }); // fixes /index.php 404
+    // Support POSTs to /index.php?route=... for environments without URL rewriting
+    $r->addRoute('POST', '/index.php', function() {
+        $route = trim($_GET['route'] ?? '');
+        try { error_log('[index.php legacy POST] route=' . $route . ' REQUEST_URI=' . ($_SERVER['REQUEST_URI'] ?? '') . ' POST=' . json_encode($_POST)); } catch (\Throwable $_) {}
+        switch ($route) {
+            case 'reserve':
+                (new ReservationController())->reserve();
+                break;
+            case 'reserve/cancel':
+                (new ReservationController())->cancel();
+                break;
+            case 'loan/borrow':
+                (new LoanController())->borrow();
+                break;
+            case 'loan/return':
+                (new LoanController())->returnBook();
+                break;
+            default:
+                http_response_code(404);
+                echo '404 - Page Not Found';
+                break;
+        }
+    });
 
     // Catalog (Books) -> controller-backed
     $r->addRoute('GET', '/catalog', function() { (new BookController())->index(); });
@@ -126,15 +160,36 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/loan/borrow', function() { (new LoanController())->borrow(); });
     $r->addRoute('POST', '/loan/return', function() { (new LoanController())->returnBook(); });
     $r->addRoute('POST', '/reserve', function() { (new ReservationController())->reserve(); });
+    $r->addRoute('POST', '/reserve/cancel', function() { (new ReservationController())->cancel(); });
 
     // Member dashboard (require login)
     $r->addRoute('GET', '/dashboard', function() { (new DashboardController())->index(); });
-    $r->addRoute('GET', '/dashboard/loans', function() { Auth::requireLogin(); render('MemberDashboard/loans.php'); });
-    $r->addRoute('GET', '/dashboard/reservation', function() { Auth::requireLogin(); render('MemberDashboard/reservation.php'); });
+    $r->addRoute('GET', '/dashboard/loans', function() {
+        Auth::requireLogin();
+        $user = Auth::user();
+        $ls = new LoanService();
+        render('MemberDashboard/loans.php', ['loans' => $ls->getMyLoans((int)$user['id'])]);
+    });
+    $r->addRoute('GET', '/dashboard/reservation', function() {
+        Auth::requireLogin();
+        $user = Auth::user();
+        $rs = new ReservationService();
+        render('MemberDashboard/reservation.php', ['reservations' => $rs->getMyReservations((int)$user['id'])]);
+    });
 
     // Legacy/shortcut routes for navbar links
-    $r->addRoute('GET', '/loans', function() { Auth::requireLogin(); render('MemberDashboard/loans.php'); });
-    $r->addRoute('GET', '/reservations', function() { Auth::requireLogin(); render('MemberDashboard/reservation.php'); });
+    $r->addRoute('GET', '/loans', function() {
+        Auth::requireLogin();
+        $user = Auth::user();
+        $ls = new LoanService();
+        render('MemberDashboard/loans.php', ['loans' => $ls->getMyLoans((int)$user['id'])]);
+    });
+    $r->addRoute('GET', '/reservations', function() {
+        Auth::requireLogin();
+        $user = Auth::user();
+        $rs = new ReservationService();
+        render('MemberDashboard/reservation.php', ['reservations' => $rs->getMyReservations((int)$user['id'])]);
+    });
     $r->addRoute('GET', '/settings', function() { Auth::requireLogin(); render('MemberDashboard/settings.php'); });
 
     // Admin

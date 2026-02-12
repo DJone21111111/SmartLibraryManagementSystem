@@ -23,7 +23,24 @@
             <tr>
               <td>
                 <div class="d-flex gap-2 align-items-center">
-                  <?php $src = \App\Framework\Assets::coverSrc($b['cover_url'] ?? ''); ?>
+                  <?php
+                    $defaultCover = '/assets/Uploads/covers/default-cover.svg';
+                    $u = trim((string)($b['cover_url'] ?? ''));
+                    if ($u === '') {
+                      $src = $defaultCover;
+                    } elseif (filter_var($u, FILTER_VALIDATE_URL)) {
+                      $src = $u;
+                    } elseif (str_starts_with($u, '/images/')) {
+                      $name = basename($u);
+                      $src = $name === 'default-cover.png' ? $defaultCover : '/assets/Uploads/covers/' . $name;
+                    } elseif (str_starts_with($u, '/')) {
+                      $src = $u;
+                    } elseif (str_contains($u, 'assets/')) {
+                      $src = '/' . ltrim($u, '/');
+                    } else {
+                      $src = '/assets/Uploads/covers/' . ltrim($u, '/');
+                    }
+                  ?>
                   <img class="cover" src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars(($b['Title'] ?? 'Book') . ' cover') ?>">
                   <div>
                     <div class="fw-semibold"><?= htmlspecialchars($b['Title'] ?? '') ?></div>

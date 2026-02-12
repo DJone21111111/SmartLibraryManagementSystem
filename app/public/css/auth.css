@@ -1,11 +1,11 @@
-/* Fonts */
+
 @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Inter:wght@300;400;600;700&display=swap');
 
 :root{
 	--bg-pale: #fbf7f4;
 	--panel-bg: #fff;
 	--muted: #6b6b6b;
-	--accent-1: #e67d2b; /* orange */
+	--accent-1: #e67d2b; 
 	--accent-2: #d87125;
 	--card-radius: 10px;
 }
@@ -105,14 +105,12 @@
 	width:64px; height:64px; border-radius:50%; display:block; margin: -46px auto 18px; background:#5a3b2a; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
-/* right hero text - overlayed title */
 .auth-hero .hero-text{
 	position:absolute; left:50%; top:50%; transform: translate(-50%, -50%); color: #fff; text-align:center; max-width:420px;
 }
 .auth-hero .hero-text h1{ font-family: 'Merriweather', serif; font-size:42px; margin:0 0 8px; }
 .auth-hero .hero-text p{ margin:0; color: rgba(255,255,255,0.9); }
 
-/* responsive */
 @media (max-width: 900px){
 	.auth-grid{ grid-template-columns: 1fr; }
 	.auth-hero{ min-height:260px; }

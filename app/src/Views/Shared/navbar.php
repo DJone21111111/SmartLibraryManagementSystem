@@ -18,8 +18,16 @@ use App\Framework\Auth;
       $path = rtrim($path, '/') ?: '/';
       $loggedIn = Auth::check();
 
-      $dashboardActive = ($loggedIn && strpos($path, '/dashboard') === 0) ? ' active' : '';
-      $catalogActive   = (strpos($path, '/catalog') === 0 || strpos($path, '/books') === 0 || $path === '/') ? ' active' : '';
+      // When at root '/', show Dashboard as active for logged-in users,
+      // otherwise show Catalog as active for guests. For other paths
+      // keep the existing matching behaviour.
+      if ($path === '/') {
+        $dashboardActive = $loggedIn ? ' active' : '';
+        $catalogActive = $loggedIn ? '' : ' active';
+      } else {
+        $dashboardActive = ($loggedIn && strpos($path, '/dashboard') === 0) ? ' active' : '';
+        $catalogActive   = (strpos($path, '/catalog') === 0 || strpos($path, '/books') === 0) ? ' active' : '';
+      }
       $loansActive     = (strpos($path, '/loans') === 0) ? ' active' : '';
       $reservActive    = (strpos($path, '/reservations') === 0) ? ' active' : '';
       $settingsActive  = (strpos($path, '/settings') === 0) ? ' active' : '';
@@ -57,12 +65,41 @@ use App\Framework\Auth;
           </nav>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
-          <?php if (Auth::check()): $u = Auth::user(); ?>
-            <div class="text-muted">Welcome, <?= htmlspecialchars($u['name'] ?? $u['email'] ?? 'User') ?>!</div>
+        <div class="d-flex align-items-center gap-3 user-area">
+          <?php if (Auth::check()): $u = Auth::user();
+                // If session doesn't include the user's full name (older sessions), fetch and persist it.
+                if (empty($u['name']) && !empty($u['id'])) {
+                  try {
+                    $repo = new \App\Repository\UserRepository();
+                    $dbu = $repo->findById((int)$u['id']);
+                    if ($dbu && !empty($dbu['name'])) {
+                      $u['name'] = $dbu['name'];
+                      \App\Framework\Auth::login($u);
+                    }
+                  } catch (\Throwable $ex) { /* ignore DB lookup errors here */ }
+                }
+
+                $notifCount = (int)($_SESSION['notifications_count'] ?? $_SESSION['notif_count'] ?? 0);
+                $displayName = $u['name'] ?? $u['email'] ?? 'User';
+                $parts = preg_split('/\s+/', trim($displayName));
+                $initials = strtoupper(substr($parts[0] ?? '',0,1) . (isset($parts[1]) ? substr($parts[1],0,1) : ''));
+          ?>
+            <div class="user-welcome text-muted">Welcome, <strong><?= htmlspecialchars($displayName) ?></strong></div>
+
+            <div class="user-notif position-relative">
+              <a href="/notifications" class="btn btn-light btn-sm rounded-circle" title="Notifications">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+              </a>
+              <?php if ($notifCount > 0): ?>
+                <span class="notif-badge"><?= $notifCount ?></span>
+              <?php endif; ?>
+            </div>
+
             <div class="dropdown">
-              <a class="btn btn-light btn-sm rounded-circle" href="#" role="button" data-bs-toggle="dropdown"><?= strtoupper(substr($u['name'] ?? 'U',0,1)) ?></a>
+              <a class="btn user-initials" href="#" role="button" data-bs-toggle="dropdown"><?= htmlspecialchars($initials ?: strtoupper(substr($displayName,0,1))) ?></a>
               <ul class="dropdown-menu dropdown-menu-end">
+                <li class="px-3 py-2"><strong><?= htmlspecialchars($displayName) ?></strong></li>
+                <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
                 <li><a class="dropdown-item" href="/logout">Logout</a></li>
               </ul>

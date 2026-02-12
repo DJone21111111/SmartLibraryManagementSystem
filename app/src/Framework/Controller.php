@@ -17,7 +17,11 @@ class Controller
 
     protected function redirect(string $path): void
     {
-        // Normalize redirects: accept absolute paths or route-like strings
+        // Normalize legacy book detail redirects of the form 'book/detail&id=123' or 'book/detail?id=123'
+        if (preg_match('#^book/detail[&?]id=(\d+)$#', $path, $m)) {
+            $path = '/books/' . $m[1];
+        }
+
         if (str_starts_with($path, 'http') || str_starts_with($path, '/')) {
             $target = $path;
         } else {

@@ -10,6 +10,8 @@ class ReservationController extends Controller
 {
     public function reserve(): void
     {
+        try { error_log('[ReservationController::reserve] REQUEST method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' uri=' . ($_SERVER['REQUEST_URI'] ?? '') . ' route=' . ($_GET['route'] ?? '') . ' POST=' . json_encode($_POST)); } catch (\Throwable $_) {}
+
         Auth::requireLogin();
 
         $user = Auth::user();
@@ -22,15 +24,59 @@ class ReservationController extends Controller
         }
 
         $service = new ReservationService();
-        $ok = $service->reserve((int)$user['id'], $bookId);
+        try {
+            error_log('[reserve] incoming: user_id=' . ($user['id'] ?? 'none') . ' book_id=' . $bookId);
+            $ok = $service->reserve((int)$user['id'], $bookId);
+            error_log('[reserve] service->reserve returned: ' . ($ok ? 'true' : 'false'));
+        } catch (\Throwable $ex) {
+            error_log('[reserve] exception: ' . $ex->getMessage());
+            $ok = false;
+        }
 
         if (!$ok) {
             $this->flash('You already reserved this book.', 'warning');
-            $this->redirect('book/detail&id=' . $bookId);
+            $this->redirect('/books/' . $bookId);
             return;
         }
 
         $this->flash('Reservation placed!', 'success');
+        // Support AJAX: return JSON when requested
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $ok, 'message' => 'Reservation placed!']);
+            return;
+        }
+
         $this->redirect('dashboard');
+    }
+
+    public function cancel(): void
+    {
+        Auth::requireLogin();
+
+        $user = Auth::user();
+        $reservationId = (int)($_POST['reservation_id'] ?? 0);
+
+        if ($reservationId <= 0) {
+            $this->flash('Invalid reservation.', 'danger');
+            $this->redirect('dashboard');
+            return;
+        }
+
+        $service = new ReservationService();
+        $ok = $service->cancel($reservationId, (int)$user['id']);
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $ok, 'message' => $ok ? 'Reservation cancelled.' : 'Unable to cancel reservation.']);
+            return;
+        }
+
+        if (!$ok) {
+            $this->flash('Unable to cancel reservation.', 'danger');
+        } else {
+            $this->flash('Reservation cancelled.', 'success');
+        }
+        $this->redirect('dashboard/reservation');
     }
 }

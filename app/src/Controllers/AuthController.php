@@ -13,7 +13,7 @@ class AuthController extends Controller
         $this->render('Auth/login', [
             'title' => 'Login',
             'error' => null,
-            'hideSidebar' => true
+            'hideSidebar' => false
         ]);
     }
 
@@ -26,7 +26,7 @@ class AuthController extends Controller
             $this->render('Auth/login', [
                 'title' => 'Login',
                 'error' => 'Email and password are required.',
-                'hideSidebar' => true
+                'hideSidebar' => false
             ]);
             return;
         }
@@ -38,7 +38,7 @@ class AuthController extends Controller
             $this->render('Auth/login', [
                 'title' => 'Login',
                 'error' => 'Invalid login or account blocked.',
-                'hideSidebar' => true
+                'hideSidebar' => false
             ]);
             return;
         }
@@ -60,6 +60,7 @@ class AuthController extends Controller
     {
         Auth::logout();
         $this->flash('You have been logged out.', 'success');
-        $this->redirect('home');
+        // Redirect to login after logout (home route not defined)
+        $this->redirect('login');
     }
 }

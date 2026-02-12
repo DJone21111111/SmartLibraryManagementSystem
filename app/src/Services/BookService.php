@@ -14,9 +14,9 @@ class BookService implements IBookService
         $this->books = $books ?? new BookRepository();
     }
 
-    public function getBooks(string $search = ''): array
+    public function getBooks(string $search = '', string $filter = ''): array
     {
-        return $this->books->getAll($search);
+        return $this->books->getAll($search, $filter);
     }
 
     public function getBook(int $id): ?array

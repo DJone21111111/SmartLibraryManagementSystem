@@ -1,10 +1,20 @@
+<?php
+$suppressCatalogHeader = $suppressCatalogHeader ?? false;
+$suppressCatalogContainer = $suppressCatalogContainer ?? false;
+?>
+
+<?php if (!$suppressCatalogContainer): ?>
 <div class="container py-4">
   <div class="catalog-container">
     <div class="catalog-main">
+<?php endif; ?>
+
+<?php if (!$suppressCatalogHeader): ?>
       <div class="page-header">
         <div class="page-title">Book Catalog</div>
         <div class="page-subtitle">Browse and search our entire collection of books.</div>
       </div>
+<?php endif; ?>
 
       <form class="catalog-search" method="get" action="/catalog" role="search" aria-label="Catalog search">
         <div class="input-group">
@@ -15,11 +25,34 @@
       </form>
 
       <div class="d-flex justify-content-between align-items-center mb-3">
+        <?php
+          $currentFilter = trim($filter ?? '');
+          $isLoggedIn = \App\Framework\Auth::check();
+          $qs = $_GET;
+        ?>
         <div class="filters d-flex gap-2 align-items-center">
-          <button type="button" class="btn btn-filter active">All</button>
-          <button type="button" class="btn btn-filter">Available</button>
-          <button type="button" class="btn btn-filter">Overdue</button>
-          <button type="button" class="btn btn-filter">Reserved</button>
+          <?php
+            $allQs = $qs;
+            unset($allQs['filter']);
+          ?>
+          <a href="?<?= http_build_query($allQs) ?>" class="btn btn-filter<?= $currentFilter === '' ? ' active' : '' ?>">All</a>
+
+          <?php $availQs = array_merge($qs, ['filter' => 'available']); ?>
+          <a href="?<?= http_build_query($availQs) ?>" class="btn btn-filter<?= $currentFilter === 'available' ? ' active' : '' ?>">Available</a>
+
+          <?php if ($isLoggedIn):
+            $overQs = array_merge($qs, ['filter' => 'overdue']); ?>
+            <a href="?<?= http_build_query($overQs) ?>" class="btn btn-filter<?= $currentFilter === 'overdue' ? ' active' : '' ?>">Overdue</a>
+          <?php else: ?>
+            <a href="/login" class="btn btn-filter">Overdue</a>
+          <?php endif; ?>
+
+          <?php if ($isLoggedIn):
+            $resQs = array_merge($qs, ['filter' => 'reserved']); ?>
+            <a href="?<?= http_build_query($resQs) ?>" class="btn btn-filter<?= $currentFilter === 'reserved' ? ' active' : '' ?>">Reserved</a>
+          <?php else: ?>
+            <a href="/login" class="btn btn-filter">Reserved</a>
+          <?php endif; ?>
         </div>
 
         <div class="d-flex gap-2 align-items-center">
@@ -45,7 +78,6 @@
         <div class="alert alert-info">No books found.</div>
       <?php else: ?>
         <?php
-          // Pagination: 4 items per page
           $page = max(1, (int)($_GET['p'] ?? 1));
           $perPage = 4;
           $total = count($books);
@@ -55,9 +87,8 @@
           $pageItems = array_slice($books, $start, $perPage);
         ?>
 
-        <div class="d-flex flex-column gap-3">
+        <div id="catalog-results" class="catalog-results list d-flex flex-column gap-3">
           <?php foreach ($pageItems as $b):
-            // normalize DB columns (admin exports show lowercase column names)
             $file = $b['cover_url'] ?? $b['cover'] ?? $b['coverPath'] ?? '';
             if (trim($file) === '') {
               $coverPath = '/assets/Uploads/covers/default-cover.svg';
@@ -91,11 +122,43 @@
                 </div>
                 <div class="ms-3 text-end d-none d-md-block">
                   <?php if ($available !== null && (int)$available > 0): ?>
-                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">Borrow</a>
+                    <?php if (\App\Framework\Auth::check()): ?>
+                      <form method="post" action="/loan/borrow" class="d-inline">
+                        <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                        <button type="submit" class="btn btn-accent">Borrow</button>
+                      </form>
+                    <?php else: ?>
+                      <a href="/login" class="btn btn-accent">Borrow</a>
+                    <?php endif; ?>
                   <?php elseif ($available !== null && (int)$available <= 0): ?>
-                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-outline-secondary">Reserve</a>
+                      <?php if (\App\Framework\Auth::check()): ?>
+                      <form method="post" action="/reserve" class="d-inline">
+                        <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                        <button type="submit" class="btn btn-outline-secondary">Reserve</button>
+                      </form>
+                    <?php else: ?>
+                      <a href="/login" class="btn btn-outline-secondary">Reserve</a>
+                    <?php endif; ?>
                   <?php else: ?>
-                    <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">View</a>
+                    <?php if ($totalCopies !== null && (int)$totalCopies === 0): ?>
+                      <?php if (\App\Framework\Auth::check()): ?>
+                        <form method="post" action="/reserve" class="d-inline">
+                          <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                          <button type="submit" class="btn btn-outline-secondary">Reserve</button>
+                        </form>
+                      <?php else: ?>
+                        <a href="/login" class="btn btn-outline-secondary">Reserve</a>
+                      <?php endif; ?>
+                    <?php else: ?>
+                      <?php if (\App\Framework\Auth::check()): ?>
+                        <form method="post" action="/loan/borrow" class="d-inline">
+                          <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                          <button type="submit" class="btn btn-accent">Borrow</button>
+                        </form>
+                      <?php else: ?>
+                        <a href="/login" class="btn btn-accent">Borrow</a>
+                      <?php endif; ?>
+                    <?php endif; ?>
                   <?php endif; ?>
                 </div>
               </div>
@@ -119,19 +182,55 @@
                     <span class="badge badge-unavailable">Unavailable</span>
                   <?php endif; ?>
                 <?php elseif ($totalCopies !== null): ?>
-                  <span class="badge badge-info">Total copies: <?= (int)$totalCopies ?></span>
-                  <?php if ((int)$totalCopies <= 2): ?> <span class="badge badge-low">Low Stock</span><?php endif; ?>
+                  <?php if ((int)$totalCopies === 0): ?>
+                    <span class="badge badge-unavailable">Unavailable</span>
+                  <?php else: ?>
+                    <span class="badge badge-info">Total copies: <?= (int)$totalCopies ?></span>
+                    <?php if ((int)$totalCopies <= 2): ?> <span class="badge badge-low">Low Stock</span><?php endif; ?>
+                  <?php endif; ?>
                 <?php endif; ?>
               </div>
             </div>
 
             <div class="list-actions d-block d-md-none">
               <?php if ($available !== null && (int)$available > 0): ?>
-                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">Borrow</a>
+                <?php if (\App\Framework\Auth::check()): ?>
+                  <form method="post" action="/loan/borrow" class="d-inline">
+                    <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                    <button type="submit" class="btn btn-accent">Borrow</button>
+                  </form>
+                <?php else: ?>
+                  <a href="/login" class="btn btn-accent">Borrow</a>
+                <?php endif; ?>
               <?php elseif ($available !== null && (int)$available <= 0): ?>
-                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-outline-secondary">Reserve</a>
+                <?php if (\App\Framework\Auth::check()): ?>
+                  <form method="post" action="/reserve" class="d-inline">
+                    <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                    <button type="submit" class="btn btn-outline-secondary">Reserve</button>
+                  </form>
+                <?php else: ?>
+                  <a href="/login" class="btn btn-outline-secondary">Reserve</a>
+                <?php endif; ?>
               <?php else: ?>
-                <a href="/books/<?= (int)$b['id'] ?>" class="btn btn-accent">View</a>
+                <?php if ($totalCopies !== null && (int)$totalCopies === 0): ?>
+                    <?php if (\App\Framework\Auth::check()): ?>
+                      <form method="post" action="/reserve" class="d-inline">
+                      <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                      <button type="submit" class="btn btn-outline-secondary">Reserve</button>
+                    </form>
+                  <?php else: ?>
+                    <a href="/login" class="btn btn-outline-secondary">Reserve</a>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <?php if (\App\Framework\Auth::check()): ?>
+                    <form method="post" action="/loan/borrow" class="d-inline">
+                      <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                      <button type="submit" class="btn btn-accent">Borrow</button>
+                    </form>
+                  <?php else: ?>
+                    <a href="/login" class="btn btn-accent">Borrow</a>
+                  <?php endif; ?>
+                <?php endif; ?>
               <?php endif; ?>
             </div>
           </div>
@@ -156,7 +255,8 @@
       <?php endif; ?>
     </div>
 
-    
+<?php if (!$suppressCatalogContainer): ?>
   </div>
 </div>
+<?php endif; ?>
                                     

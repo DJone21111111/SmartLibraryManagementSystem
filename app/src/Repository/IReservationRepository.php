@@ -9,4 +9,5 @@ interface IReservationRepository
     public function getByUser(int $userId): array;
 
     public function hasActiveReservation(int $userId, int $bookId): bool;
+    public function cancel(int $reservationId, int $userId): bool;
 }

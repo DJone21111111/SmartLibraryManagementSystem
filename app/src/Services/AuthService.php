@@ -35,6 +35,7 @@ class AuthService implements IAuthService
         // Return safe user data to store in session (no password)
         return [
             'id' => (int)$user['id'],
+            'name' => $user['name'] ?? ($user['Name'] ?? null),
             'email' => $user['Email'],
             'role' => $user['role']
         ];

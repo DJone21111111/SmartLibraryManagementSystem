@@ -25,8 +25,20 @@ class LoanController extends Controller
         $ok = $service->borrow((int)$user['id'], $bookId);
 
         if (!$ok) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'No copies available to borrow.']);
+                return;
+            }
+
             $this->flash('No copies available to borrow.', 'warning');
-            $this->redirect('book/detail&id=' . $bookId);
+            $this->redirect('/books/' . $bookId);
+            return;
+        }
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Book borrowed successfully!']);
             return;
         }
 
@@ -50,13 +62,22 @@ class LoanController extends Controller
         $service = new LoanService();
         $ok = $service->returnBook($loanId, (int)$user['id']);
 
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => (bool)$ok, 'message' => $ok ? 'Book returned.' : 'Unable to return loan.']);
+            return;
+        }
+
+        // Non-AJAX fallback: redirect back to the referring page when possible
+        $referer = $_SERVER['HTTP_REFERER'] ?? null;
+
         if (!$ok) {
             $this->flash('Unable to return loan.', 'danger');
-            $this->redirect('dashboard');
+            $this->redirect($referer ?? 'dashboard/loans');
             return;
         }
 
         $this->flash('Book returned.', 'success');
-        $this->redirect('dashboard');
+        $this->redirect($referer ?? 'dashboard/loans');
     }
 }
